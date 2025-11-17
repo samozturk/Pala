@@ -1,0 +1,39 @@
+downloads/
+
+# Secrets and credentials
+.env
+.env.local
+.env.*.local
+
+# Configuration (keep templates)
+config.json
+
+# Cache directories
+.cache
+.librespot-cache/
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+lavalink/*
