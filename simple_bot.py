@@ -6,6 +6,7 @@ from pala_replik import leave_replik
 from utils.spoti import search_spotify_track, search_user_playlist, get_playlist_tracks, extract_playlist_id
 import yt_dlp
 import asyncio
+import random
 from utils.config import Discord as DiscordConfig, Audio as AudioConfig, Queue as QueueConfig
 
 # Global queue for playlist playback
@@ -26,6 +27,40 @@ bot = commands.Bot(command_prefix=DiscordConfig.COMMAND_PREFIX, intents=intents,
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    """Greet users when they join a voice channel (where the bot is present)"""
+    # Ignore bot's own voice state changes
+    if member.bot:
+        return
+
+    # Check if user joined a voice channel (wasn't in one before, now is)
+    if before.channel is None and after.channel is not None:
+        # Check if bot is in the same voice channel
+        if bot.voice_clients:
+            for voice_client in bot.voice_clients:
+                if voice_client.channel == after.channel:
+                    # User joined the same channel as the bot
+                    # Find a text channel to send the greeting
+                    text_channel = None
+
+                    # Try to find the channel where bot was last commanded from
+                    # Or just use the first text channel the bot can see in this guild
+                    for channel in member.guild.text_channels:
+                        if channel.permissions_for(member.guild.me).send_messages:
+                            text_channel = channel
+                            break
+
+                    if text_channel:
+                        greetings = [
+                            f"Hoş geldin {member.display_name}, babayiğit!",
+                            f"Mekandayız {member.display_name}! Ne var ne yok?",
+                            f"{member.display_name} geldi. Hayırlı nöbetler babayiğit!",
+                            f"Selam {member.display_name}. İş var mı?",
+                            f"{member.display_name}, aramıza hoş geldin dayı!",
+                        ]
+                        await text_channel.send(random.choice(greetings))
 
 @bot.event
 async def on_message(message):
@@ -254,13 +289,22 @@ async def play_track_from_queue(ctx, track_info):
 
 @bot.command()
 async def playlist(ctx, *, query):
-    """Play a Spotify playlist - searches your playlists first, then accepts public URLs"""
+    """Play a Spotify playlist - searches your playlists first, then accepts public URLs
+
+    Use --shuffle or -s flag to shuffle: !playlist --shuffle workout
+    """
     global music_queue, current_track_index
 
     # Check if user is in a voice channel
     if not ctx.author.voice:
         await ctx.send("Bidi bidi yapma kral. Önce bir sesli kanala gir!")
         return
+
+    # Check for shuffle flag
+    shuffle_mode = False
+    if '--shuffle' in query or '-s' in query:
+        shuffle_mode = True
+        query = query.replace('--shuffle', '').replace('-s', '').strip()
 
     # Try to find in user's playlists first
     await ctx.send(f"'{query}' listeni arıyorum...")
@@ -310,6 +354,11 @@ async def playlist(ctx, *, query):
         await ctx.send(f"Liste çok uzun babayiğit! Maksimum {max_size} şarkı alabiliyorum. İlk {max_size} şarkıyı yüklüyorum...")
         music_queue = music_queue[:max_size]
 
+    # Shuffle if requested
+    if shuffle_mode:
+        random.shuffle(music_queue)
+        await ctx.send("🔀 Listeyi karıştırdım babayiğit!")
+
     # Reset queue index
     current_track_index = 0
 
@@ -320,7 +369,8 @@ async def playlist(ctx, *, query):
 
     # Start playing the first track
     first_track = music_queue[0]
-    await ctx.send(f"🎵 Liste başlıyor: {playlist_info['name']} ({len(music_queue)} şarkı)")
+    shuffle_msg = " (karışık)" if shuffle_mode else ""
+    await ctx.send(f"🎵 Liste başlıyor: {playlist_info['name']}{shuffle_msg} ({len(music_queue)} şarkı)")
     await ctx.send(f"İlk şarkı: {first_track['name']} - {first_track['artist']}")
 
     success = await play_track_from_queue(ctx, first_track)
@@ -397,6 +447,34 @@ async def clear(ctx):
         voice_client.stop()
 
     await ctx.send("Listeyi temizledim. Hepsi gitti!")
+
+@bot.command()
+async def shuffle(ctx):
+    """Shuffle the current playlist queue (keeps currently playing track)"""
+    global music_queue, current_track_index
+
+    if not music_queue:
+        await ctx.send("Liste boş babayiğit! Önce bir liste yükle.")
+        return
+
+    if len(music_queue) <= 1:
+        await ctx.send("Karıştıracak bir şey yok ki!")
+        return
+
+    # Get the remaining tracks (after current)
+    remaining_tracks = music_queue[current_track_index + 1:]
+
+    if not remaining_tracks:
+        await ctx.send("Sırada şarkı yok ki babayiğit!")
+        return
+
+    # Shuffle the remaining tracks
+    random.shuffle(remaining_tracks)
+
+    # Rebuild queue: tracks before current + current + shuffled remaining
+    music_queue = music_queue[:current_track_index + 1] + remaining_tracks
+
+    await ctx.send(f"🔀 Sıradaki {len(remaining_tracks)} şarkıyı karıştırdım!")
 
 if __name__ == '__main__':
     bot.run(DiscordConfig.BOT_TOKEN)

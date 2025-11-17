@@ -25,7 +25,9 @@ A Turkish-language Discord bot with Spotify integration, AI chat capabilities, a
 |---------|-------------|
 | `!play <song name>` | Search Spotify and stream music to voice channel |
 | `!playlist <name_or_url>` | Play a Spotify playlist (searches your playlists or accepts URL) |
+| `!playlist --shuffle <name>` | Play a playlist in shuffle mode |
 | `!skip` | Skip to the next track in the playlist queue |
+| `!shuffle` | Shuffle the remaining tracks in the current queue |
 | `!queue` | Show currently playing track and upcoming songs |
 | `!clear` | Clear the playlist queue |
 | `!gel <audio_file>` | Play local audio file from sound directory |
@@ -163,7 +165,18 @@ Works with any public Spotify playlist URL.
 ```
 !queue      # Show what's playing and what's next
 !skip       # Skip to the next track
+!shuffle    # Shuffle the remaining tracks in queue
 !clear      # Clear the entire queue
+```
+
+**Shuffle Mode:**
+```
+# Load playlist already shuffled
+!playlist --shuffle workout
+!playlist -s chill vibes
+
+# Or shuffle the current queue
+!shuffle
 ```
 
 **How It Works:**
@@ -171,6 +184,7 @@ Works with any public Spotify playlist URL.
 - Automatically plays through the queue sequentially
 - Each track is found on YouTube and streamed
 - Auto-advances when a track finishes
+- Shuffle randomizes track order without interrupting current playback
 - Maximum 100 tracks per playlist (configurable in `config.json`)
 
 ### Testing Spotify API
