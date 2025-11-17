@@ -9,6 +9,8 @@ A Turkish-language Discord bot with Spotify integration, AI chat capabilities, a
 
 ### 🎵 Music Playback
 - **Spotify Integration**: Search songs on Spotify and stream them to Discord voice channels
+- **Playlist Support**: Play your personal Spotify playlists or public playlist URLs
+- **Queue Management**: Skip tracks, view upcoming songs, and clear the queue
 - **Local Audio**: Play local MP3 files from the `sound/` directory
 - **Voice Controls**: Join, leave, stop, and pause commands
 
@@ -22,6 +24,10 @@ A Turkish-language Discord bot with Spotify integration, AI chat capabilities, a
 | Command | Description |
 |---------|-------------|
 | `!play <song name>` | Search Spotify and stream music to voice channel |
+| `!playlist <name_or_url>` | Play a Spotify playlist (searches your playlists or accepts URL) |
+| `!skip` | Skip to the next track in the playlist queue |
+| `!queue` | Show currently playing track and upcoming songs |
+| `!clear` | Clear the playlist queue |
 | `!gel <audio_file>` | Play local audio file from sound directory |
 | `!leave` | Leave the voice channel |
 | `!stop` | Stop currently playing audio |
@@ -137,6 +143,35 @@ This approach:
 - ✅ Works reliably
 - ✅ Uses Spotify's excellent search
 - ✅ Streams from YouTube's infrastructure
+
+#### Playing Playlists
+
+**From Your Personal Library:**
+```
+!playlist workout
+!playlist chill vibes
+```
+The bot will search your Spotify playlists by name (fuzzy matching).
+
+**From Public URLs:**
+```
+!playlist https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M
+```
+Works with any public Spotify playlist URL.
+
+**Queue Management:**
+```
+!queue      # Show what's playing and what's next
+!skip       # Skip to the next track
+!clear      # Clear the entire queue
+```
+
+**How It Works:**
+- Loads all tracks from the playlist
+- Automatically plays through the queue sequentially
+- Each track is found on YouTube and streamed
+- Auto-advances when a track finishes
+- Maximum 100 tracks per playlist (configurable in `config.json`)
 
 ### Testing Spotify API
 

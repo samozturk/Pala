@@ -114,6 +114,11 @@ class Audio:
     LOCAL_FILES_DIRECTORY = get_config('audio.local_files_directory')
 
 
+# Queue Configuration
+class Queue:
+    MAX_SIZE = get_config('queue.max_size', required=False, default=100)
+
+
 # Lavalink Configuration
 class Lavalink:
     PASSWORD = get_env('LAVALINK_PASSWORD', required=False, default='youshallnotpass')
@@ -122,4 +127,4 @@ class Lavalink:
 
 
 # Export for easy access
-__all__ = ['Discord', 'Spotify', 'Ollama', 'Audio', 'Lavalink', 'get_env', 'get_config']
+__all__ = ['Discord', 'Spotify', 'Ollama', 'Audio', 'Queue', 'Lavalink', 'get_env', 'get_config']

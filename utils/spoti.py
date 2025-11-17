@@ -33,7 +33,7 @@ def search_spotify_track(query):
         dict: A dictionary containing the track's URI, name, and artist.
     '''
     results = sp.search(q=query, limit=1, type='track')
-    
+
     if results['tracks']['items']:
         # Get the first track from the search results
         track = results['tracks']['items'][0]
@@ -46,6 +46,96 @@ def search_spotify_track(query):
             'name': track_name,
             'artist': artist_name
         }
+    return None
+
+def search_user_playlist(query):
+    '''Search for a playlist in the current user's library by name (fuzzy matching).
+
+    Args:
+        query (str): The playlist name to search for
+
+    Returns:
+        dict: A dictionary containing the playlist's ID, name, and track count, or None if not found
+    '''
+    # Get all user playlists (handle pagination)
+    playlists = []
+    offset = 0
+    limit = 50
+
+    while True:
+        results = sp.current_user_playlists(limit=limit, offset=offset)
+        if not results['items']:
+            break
+        playlists.extend(results['items'])
+        if len(results['items']) < limit:
+            break
+        offset += limit
+
+    # Search for matching playlist (case-insensitive substring match)
+    query_lower = query.lower()
+    for playlist in playlists:
+        if query_lower in playlist['name'].lower():
+            return {
+                'id': playlist['id'],
+                'name': playlist['name'],
+                'track_count': playlist['tracks']['total']
+            }
+
+    return None
+
+def get_playlist_tracks(playlist_id):
+    '''Fetch all tracks from a Spotify playlist.
+
+    Args:
+        playlist_id (str): The Spotify playlist ID
+
+    Returns:
+        list: List of track dictionaries with 'name', 'artist', and 'uri' keys
+    '''
+    tracks = []
+    offset = 0
+    limit = 100
+
+    while True:
+        results = sp.playlist_tracks(playlist_id, limit=limit, offset=offset)
+
+        for item in results['items']:
+            if item['track'] and item['track']['name']:  # Skip None/deleted tracks
+                track = item['track']
+                tracks.append({
+                    'name': track['name'],
+                    'artist': track['artists'][0]['name'] if track['artists'] else 'Unknown',
+                    'uri': track['uri']
+                })
+
+        if len(results['items']) < limit:
+            break
+        offset += limit
+
+    return tracks
+
+def extract_playlist_id(url):
+    '''Extract playlist ID from a Spotify playlist URL.
+
+    Args:
+        url (str): Spotify playlist URL (e.g., https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M)
+
+    Returns:
+        str: Playlist ID, or None if invalid URL
+    '''
+    import re
+
+    # Match various Spotify playlist URL formats
+    patterns = [
+        r'spotify\.com/playlist/([a-zA-Z0-9]+)',
+        r'spotify:playlist:([a-zA-Z0-9]+)'
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+
     return None
 
 def stop_spotify_device(process):
